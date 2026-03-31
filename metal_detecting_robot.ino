@@ -8,7 +8,7 @@ const int FR = 6;  // Front Right
 const int RR = 7;  // Rear Right
 const int RL = 8;  // Rear Left
 
-const int motorDelay = 200;
+const int motorDelay = 500;
 
 String inputString = "";  // Buffer for incoming BT string
 
