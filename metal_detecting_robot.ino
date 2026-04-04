@@ -18,9 +18,12 @@ const int SENSOR_3 = A3;
 // Adjust this threshold based on your sensor's output when metal is near
 const int METAL_THRESHOLD = 0;
 
-const int motorDelay = 500;
+const int motorDelay = 300;
+const int SENSOR_INTERVAL = 500;
 String inputString = "";
 bool metalDetected = false;
+unsigned long motorStopTime = 0;
+unsigned long lastSensorCheck = 0;
 
 void setup() {
   pinMode(FL, OUTPUT);
@@ -45,7 +48,15 @@ void setup() {
 }
 
 void loop() {
-  checkMetalSensors();
+  if (motorStopTime > 0 && millis() >= motorStopTime) {
+    stopMotors();
+    motorStopTime = 0;
+  }
+
+  if (millis() - lastSensorCheck >= SENSOR_INTERVAL) {
+    lastSensorCheck = millis();
+    checkMetalSensors();
+  }
 
   while (BT.available()) {
     char c = BT.read();
@@ -73,26 +84,22 @@ void handleCommand(String cmd) {
   if (cmd == "f" || cmd == "front") {
     Serial.println(">> FORWARD");
     moveForward();
-    delay(motorDelay);
-    stopMotors();
+    motorStopTime = millis() + motorDelay;
 
   } else if (cmd == "b" || cmd == "back") {
     Serial.println(">> BACKWARD");
     moveBackward();
-    delay(motorDelay);
-    stopMotors();
+    motorStopTime = millis() + motorDelay;
 
   } else if (cmd == "l" || cmd == "left") {
     Serial.println(">> TURN LEFT");
     turnLeft();
-    delay(motorDelay);
-    stopMotors();
+    motorStopTime = millis() + motorDelay;
 
   } else if (cmd == "r" || cmd == "right") {
     Serial.println(">> TURN RIGHT");
     turnRight();
-    delay(motorDelay);
-    stopMotors();
+    motorStopTime = millis() + motorDelay;
 
   } else if (cmd == "s" || cmd == "stop") {
     Serial.println(">> STOP");
@@ -115,7 +122,6 @@ void checkMetalSensors() {
   Serial.println(s1);
   Serial.println(s2);
   Serial.println(s3);
-  delay(500);
 
 
   bool detected = (s1 == METAL_THRESHOLD) || (s2 == METAL_THRESHOLD) || (s3 == METAL_THRESHOLD);
@@ -133,39 +139,36 @@ void checkMetalSensors() {
 
 // ─── Movement Functions ───────────────────────────────────
 
-void turnRight() {
-  // this is Right
-  analogWrite(EN, 60);      
-  digitalWrite(FL, HIGH);
-  digitalWrite(FR, LOW);
+void turnLeft() {
+  analogWrite(EN, 60);
+  digitalWrite(FL, LOW);
+  digitalWrite(FR, HIGH);
   digitalWrite(RL, LOW);
   digitalWrite(RR, LOW);
 }
 
-void turnLeft() {
-  // THIS IS GOING LEFT
-  analogWrite(EN, 60);   
+void turnRight() {
+  analogWrite(EN, 60);
   digitalWrite(FL, LOW);
   digitalWrite(FR, LOW);
-  digitalWrite(RL, HIGH);
-  digitalWrite(RR, LOW);
+  digitalWrite(RL, LOW);
+  digitalWrite(RR, HIGH);
 }
 
 void moveBackward() {
-  // this is reverse
   analogWrite(EN, 60);
-  digitalWrite(FR, HIGH);   
-  digitalWrite(RR, HIGH);
-  digitalWrite(FL, LOW);   
-  digitalWrite(RL, LOW);
+  digitalWrite(FL, HIGH);
+  digitalWrite(RL, HIGH);
+  digitalWrite(FR, LOW);
+  digitalWrite(RR, LOW);
 }
 
 void moveForward() {
   analogWrite(EN, 60);
-  digitalWrite(FL, HIGH);   
-  digitalWrite(RL, HIGH);
-  digitalWrite(FR, LOW);   
-  digitalWrite(RR, LOW);
+  digitalWrite(FR, HIGH);
+  digitalWrite(RR, HIGH);
+  digitalWrite(FL, LOW);
+  digitalWrite(RL, LOW);
 }
 
 void stopMotors() {
